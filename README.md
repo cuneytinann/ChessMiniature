@@ -1,6 +1,6 @@
-**[English](#chessarbiter2kb)** · **[Türkçe](#turkce)**
+**[English](#chessminiature)** · **[Türkçe](#turkce)**
 
-# chessarbiter2kb
+# ChessMiniature
 
 A two-player chess arbiter in **1,978 bytes** of one HTML file, and its twin in **1,892 bytes**. No libraries, no build step, no server, no packer. Download a file, double-click, play.
 
@@ -12,10 +12,10 @@ Part of the [Golfstack](https://www.fidelite.art/) project.
 
 | file | board | GitHub Pages | project site |
 | --- | --- | --- | --- |
-| `index.html` | letters | [chessarbiter2kb](https://cuneytinann.github.io/chessarbiter2kb/) | [L2_string_flip_noBlockedDetector.html](https://www.fidelite.art/special/L2_string_flip_noBlockedDetector.html) |
-| `hexadecimal.html` | numbers | [hexadecimal.html](https://cuneytinann.github.io/chessarbiter2kb/hexadecimal.html) | [L2_noBlockedDetector.html](https://www.fidelite.art/special/L2_noBlockedDetector.html) |
+| `index.html` | letters | [ChessMiniature](https://cuneytinann.github.io/ChessMiniature/) | [L2_string_flip_noBlockedDetector.html](https://www.fidelite.art/builds/special/L2_string_flip_noBlockedDetector.html) |
+| `hexadecimal.html` | numbers | [hexadecimal.html](https://cuneytinann.github.io/ChessMiniature/hexadecimal.html) | [L2_noBlockedDetector.html](https://www.fidelite.art/builds/special/L2_noBlockedDetector.html) |
 
-On the project site both builds sit under `special/`, as variants of the `L2` rules level.
+On the project site both builds sit under `builds/special/`, as variants of the `L2` rules level.
 
 Click a piece, click a destination. Legal targets turn amber, the selected square and then the last destination keep a green outline, and the board flips to the side to move after every ply.
 
@@ -288,7 +288,7 @@ MIT
 
 <a id="turkce"></a>
 
-# chessarbiter2kb (Türkçe)
+# ChessMiniature (Türkçe)
 
 Tek bir HTML dosyasında **1.978 bayt** içinde yazılmış iki kişilik bir satranç hakemi ve onun **1.892 baytlık** ikizi. Kütüphane yok, derleme adımı yok, sunucu yok, paketleyici yok. Bir dosyayı indirin, çift tıklayın, oynayın.
 
@@ -300,10 +300,10 @@ Tek bir HTML dosyasında **1.978 bayt** içinde yazılmış iki kişilik bir sat
 
 | dosya | tahta | GitHub Pages | proje sitesi |
 | --- | --- | --- | --- |
-| `index.html` | harfler | [chessarbiter2kb](https://cuneytinann.github.io/chessarbiter2kb/) | [L2_string_flip_noBlockedDetector.html](https://www.fidelite.art/special/L2_string_flip_noBlockedDetector.html) |
-| `hexadecimal.html` | sayılar | [hexadecimal.html](https://cuneytinann.github.io/chessarbiter2kb/hexadecimal.html) | [L2_noBlockedDetector.html](https://www.fidelite.art/special/L2_noBlockedDetector.html) |
+| `index.html` | harfler | [ChessMiniature](https://cuneytinann.github.io/ChessMiniature/) | [L2_string_flip_noBlockedDetector.html](https://www.fidelite.art/builds/special/L2_string_flip_noBlockedDetector.html) |
+| `hexadecimal.html` | sayılar | [hexadecimal.html](https://cuneytinann.github.io/ChessMiniature/hexadecimal.html) | [L2_noBlockedDetector.html](https://www.fidelite.art/builds/special/L2_noBlockedDetector.html) |
 
-Proje sitesinde iki sürüm de `special/` altında, `L2` kural seviyesinin varyantları olarak durur.
+Proje sitesinde iki sürüm de `builds/special/` altında, `L2` kural seviyesinin varyantları olarak durur.
 
 Bir taşa, sonra hedef kareye tıklayın. Yasal hedefler kehribar rengine döner; seçili kare, ardından da son hamlenin hedef karesi yeşil çerçeveyle işaretlenir; tahta her yarım hamleden sonra sırası gelen tarafa döner.
 
