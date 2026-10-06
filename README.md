@@ -2,7 +2,7 @@
 
 # ChessMiniature
 
-A two-player chess arbiter in **1,978 bytes** of one HTML file, and its twin in **1,892 bytes**. No libraries, no build step, no server, no packer. Download a file, double-click, play.
+A two-player chess arbiter in **1,975 bytes** of one HTML file, and its twin in **1,888 bytes**. No libraries, no build step, no server, no packer. Download a file, double-click, play.
 
 Both files enforce the same rules. `index.html` stores the board as letters, the way a FEN does. `hexadecimal.html` stores it as numbers. Put side by side, they are a small course in how few characters the rules of chess need, and in what a choice of representation costs.
 
@@ -98,9 +98,9 @@ d=h|v                          squares spanned by a line move: h|v is max(h,v) w
 k=(f-i)/d                      the step vector — ±1, ±8, ±7, ±9 — from one division
 h*v==2                         the knight: only 1×2 and 2×1 give 2
 T|v|h^2?d<2:…                  the king: one square, or two along the rank as castling
-f+=1.5*k-.5                    the castling rook, counted from the king's target: one on from g1, two back from c1
+f+=k>0||-2                     the castling rook, counted from the king's target: one on from g1 (true counts as 1), two back from c1
 h*v==1                         a pawn capture: one file and one rank
-y%5==1                         the pawn home ranks: only ranks 1 and 6 leave 1 when divided by 5
+y%6<2                          the pawn home ranks: y%6 is below 2 only on ranks 0, 1, 6 and 7, and a pawn never stands on 0 or 7
 f%56<8                         the last rank, for either colour
 f^8                            the en passant victim: XOR with 8 steps one rank back, in the right direction
 i*9/8%2                        the colour of a square: i*9/8 is index plus rank, and its parity is the colour
@@ -149,9 +149,9 @@ Chess programs in code-golf collections routinely drop the halfmove clock, the r
 | Halfmove clock | `n=P\|b[f]>_?0:n+1` | 16 | `n=P\|b[f]?0:n+1` | 14 |
 | Repetition counter | `$=R[s=b+t+e+c]=-~R[s]` | 21 | same | 21 |
 | Castling rights, all four | `C=i=>'20003001'[i%56]<<i/28` | 27 | same | 27 |
-| Insufficient material, both sides | `(m=W=0,b.map((p,i)=>p>_&&(j(p)<'C'?m\|=1<<i*9/8%2:W+=j(p)>'N'?9:j(p)=='N')),W*2+m<3)` | 83 | `(m=W=0,b.map((p,i)=>p&&(p<4?m\|=1<<i*9/8%2:W+=p<10?9:p>11)),W*2+m<3)` | 67 |
+| Insufficient material, both sides | `(m=W=0,b.map((p,i)=>p>_&&(j(p)<'C'?m\|=i*9/8%2+1:W+=j(p)>'N'?9:j(p)=='N')),W*2+m<3)` | 82 | `(m=W=0,b.map((p,i)=>p&&(p<4?m\|=i*9/8%2+1:W+=p>9?p>11:9)),W*2+m<3)` | 65 |
 | Every ending | `?'IM':$>4?'5R':n>149&&'75':V(t)?t?'B#':'W#':'SM'` | 48 | `?'IM':$>4?'5R':n>149?'75':0:V(t)?'WB'[t]+'#':'SM'` | 49 |
-| **total** | | **195** | | **178** |
+| **total** | | **194** | | **176** |
 
 Under a tenth of either file. The expensive part of a chess program was never the rulebook.
 
@@ -184,7 +184,7 @@ The same questions, asked of each board:
 | the king of side `s` | `b.indexOf('kK'[+s])` | 19 | `b[Q](10+s)` | 10 |
 | the enemy pawn for en passant | `b[x]=='Pp'[t]` | 13 | `b[x]==17-p` | 10 |
 | White's text colour | `b[u]<U&b[u]>'-'` | 15 | `b[u]&1` | 6 |
-| bishop? heavy piece? (material) | `j(p)<'C'` … `j(p)>'N'?9:j(p)=='N'` | 28 | `p<4` … `p<10?9:p>11` | 14 |
+| bishop? heavy piece? (material) | `j(p)<'C'` … `j(p)>'N'?9:j(p)=='N'` | 28 | `p<4` … `p>9?p>11:9` | 14 |
 | the piece glyph | `'\xA0♝♚♞♟♛♜'['-BKNPQR'.search(j(b[u]))]` | 51 | `'\xA0♝♜♛♟♚♞'[b[u]>>1]` | 33 |
 
 Choosing an encoding that packs colour, capability and order into one small integer is shorter than writing extra conditions around a string. It is not free everywhere, though, and the part-by-part count shows where numbers lose:
@@ -193,18 +193,18 @@ Choosing an encoding that packs colour, capability and order into one small inte
 | --- | --- | --- | --- |
 | aliases | 48 | 34 | +14 |
 | state | 75 | 90 | −15 |
-| `G` geometry | 280 | 259 | +21 |
+| `G` geometry | 278 | 257 | +21 |
 | `V` attack | 64 | 50 | +14 |
 | `L` legality | 95 | 110 | −15 |
 | `M` make move | 227 | 216 | +11 |
 | `d` draw | 287 | 269 | +18 |
-| `A` apply and judge | 267 | 233 | +34 |
+| `A` apply and judge | 266 | 231 | +35 |
 | everything else | 635 | 631 | +4 |
-| **file** | **1,978** | **1,892** | **+86** |
+| **file** | **1,975** | **1,888** | **+87** |
 
 - **The starting position is longer as numbers:** both boards spell themselves, but the numeric one pays for a `.map()` afterwards to turn its digits into numbers.
 - **`L` differs by design, not by encoding.** On the letter board `L(i,u)` answers whether one move is legal. On the numeric board `L(i)` returns the list of legal targets, which lets `d` build the highlight once per frame (`s=L(i)`) and `M` ask `~L(x)[Q](e)`.
-- **Everywhere else the letters pay:** +112 bytes across the aliases, `G`, `V`, `M`, `d` and `A` — every colour test, emptiness test and case conversion in the table above. Against the 30 bytes the numbers lose, that nets +82, and four more come from the markup: the letter file never wrote a paragraph end tag the parser does not need.
+- **Everywhere else the letters pay:** +113 bytes across the aliases, `G`, `V`, `M`, `d` and `A` — every colour test, emptiness test and case conversion in the table above. Against the 30 bytes the numbers lose, that nets +83, and four more come from the markup: the letter file never wrote a paragraph end tag the parser does not need.
 
 What 86 bytes buy on the letter side: a board you can read straight out of a debugger, and a repetition key that looks like the position it stands for.
 
@@ -242,20 +242,20 @@ Every byte of both files, by part.
 | aliases | 48 | 34 | `N` `a` `U` `j` · `N` `a` `Q` |
 | state | 75 | 90 | the FEN fields |
 | `z`, `R` | 20 | 20 | result code, repetition table |
-| `G` | 280 | 259 | can this piece reach that square |
+| `G` | 278 | 257 | can this piece reach that square |
 | `V` | 64 | 50 | is this square attacked |
 | `L` | 95 | 110 | is this move legal — play it, ask, take it back |
 | `C` | 27 | 27 | which castling right a square forfeits |
 | `M` | 227 | 216 | clock, promotion, en passant victim, rook hop, en passant square |
 | setup | 158 | 154 | promotion buttons and the 64 cells, generated |
 | `d` | 287 | 269 | draw the board and the status line |
-| `A` | 267 | 233 | apply the move, then the verdict |
+| `A` | 266 | 231 | apply the move, then the verdict |
 | `S` | 91 | 93 | the click handler |
 | `d()` | 3 | 3 | first draw |
 | commas, semicolons, line breaks | 42 | 40 | the layout is worth its weight |
-| **total** | **1,978** | **1,892** | |
+| **total** | **1,975** | **1,888** | |
 
-Split another way: the rules — state, `z`/`R`, `G`, `V`, `L`, `C`, `M`, `A` — take **1,055** and **1,005** bytes; the page that shows them — markup, CSS, script tags, setup, `d`, `S` and the first draw — takes **833** and **813**. The rest is aliases and separators. The rulebook and the board that displays it cost about the same.
+Split another way: the rules — state, `z`/`R`, `G`, `V`, `L`, `C`, `M`, `A` — take **1,052** and **1,001** bytes; the page that shows them — markup, CSS, script tags, setup, `d`, `S` and the first draw — takes **833** and **813**. The rest is aliases and separators. The rulebook and the board that displays it cost about the same.
 
 ---
 
@@ -271,6 +271,7 @@ The engines were checked by running them, not by reading them. Both files were d
 - **Rendering** compared cell by cell — glyph, colour, background, outline, status line, picker — against the previous build of each file across random games, promotions included.
 - **Markup**, as described in Lesson 6.
 - **The rule optimizations of September 2026**, both files, against the previous build. The pawn's double step and castling walk through `S`, the castling rook is counted from the king's target, the start-rank and square-colour tests are shorter, the pawn branch asks one shared question for capture and push, and the en passant square is written with one list. Random games with the legal move lists and the en passant square compared after every ply (50 and 85 games), a castling stress test that crowds the back ranks and parks enemy rooks and queens on the squares the king crosses (241,920 geometry calls per file), and 811 double steps in pawn-heavy positions with pins, comparing the en passant square and the repetition key: no difference anywhere. perft on `hexadecimal.html` passes on the CPW positions to depth 3. The markup, `d` and the result lines did not change.
+- **The rule optimizations of October 2026**, both files, against the previous build. The castling rook's square is written `f+=k>0||-2`, the start-rank test `y%6<2`, and the material test writes the square colour as `i*9/8%2+1` — in `hexadecimal.html` the weight as `p>9?p>11:9` too. `index.html` went from 1,978 to 1,975 bytes and `hexadecimal.html` from 1,892 to 1,888. The move generator for every piece, target and threat mode, the legal moves, the material test and the full state after every ply were compared with the previous build, over random self-play for `index.html` and 250 positions for `hexadecimal.html`: no difference. Sanity perft passes.
 
 ---
 
@@ -290,7 +291,7 @@ MIT
 
 # ChessMiniature (Türkçe)
 
-Tek bir HTML dosyasında **1.978 bayt** içinde yazılmış iki kişilik bir satranç hakemi ve onun **1.892 baytlık** ikizi. Kütüphane yok, derleme adımı yok, sunucu yok, paketleyici yok. Bir dosyayı indirin, çift tıklayın, oynayın.
+Tek bir HTML dosyasında **1.975 bayt** içinde yazılmış iki kişilik bir satranç hakemi ve onun **1.888 baytlık** ikizi. Kütüphane yok, derleme adımı yok, sunucu yok, paketleyici yok. Bir dosyayı indirin, çift tıklayın, oynayın.
 
 İki dosya da aynı kuralları uygular. `index.html` tahtayı bir FEN gibi harflerle tutar; `hexadecimal.html` sayılarla. Yan yana okunduklarında, satranç kurallarının ne kadar az karakterle yazılabileceğine ve bir veri gösterimi seçiminin neye mal olduğuna dair küçük bir derstirler.
 
@@ -386,9 +387,9 @@ d=h|v                          doğrusal bir hamlenin kat ettiği kare sayısı:
 k=(f-i)/d                      adım vektörü — ±1, ±8, ±7, ±9 — tek bir bölmeyle
 h*v==2                         at: 2 sonucunu yalnızca 1×2 ve 2×1 verir
 T|v|h^2?d<2:…                  şah: bir kare ya da rok olarak yatayda iki kare
-f+=1.5*k-.5                    rok kalesi, şahın hedefinden sayılarak: g1'den bir ileri, c1'den iki geri
+f+=k>0||-2                     rok kalesi, şahın hedefinden sayılarak: g1'den bir ileri (true 1 sayılır), c1'den iki geri
 h*v==1                         piyon alışı: bir dikey, bir yatay
-y%5==1                         piyonların başlangıç yatayları: 5'e bölümünden 1 kalan yalnız 1. ve 6. yatay
+y%6<2                          piyonların başlangıç yatayları: y%6 yalnız 0., 1., 6. ve 7. yatayda 2'den küçük, piyon da 0. ve 7. yatayda hiç durmaz
 f%56<8                         son yatay, iki renk için de
 f^8                            geçerken alınan piyon: 8 ile XOR, doğru yönde bir yatay geri gider
 i*9/8%2                        bir karenin rengi: i*9/8 indeks artı yatay, tekliği de karenin rengi
@@ -437,9 +438,9 @@ Kod golfü koleksiyonlarındaki satranç programları yarım hamle sayacını, t
 | Yarım hamle sayacı | `n=P\|b[f]>_?0:n+1` | 16 | `n=P\|b[f]?0:n+1` | 14 |
 | Tekrar sayacı | `$=R[s=b+t+e+c]=-~R[s]` | 21 | aynı | 21 |
 | Dört rok hakkının hepsi | `C=i=>'20003001'[i%56]<<i/28` | 27 | aynı | 27 |
-| Yetersiz materyal, iki taraf birden | `(m=W=0,b.map((p,i)=>p>_&&(j(p)<'C'?m\|=1<<i*9/8%2:W+=j(p)>'N'?9:j(p)=='N')),W*2+m<3)` | 83 | `(m=W=0,b.map((p,i)=>p&&(p<4?m\|=1<<i*9/8%2:W+=p<10?9:p>11)),W*2+m<3)` | 67 |
+| Yetersiz materyal, iki taraf birden | `(m=W=0,b.map((p,i)=>p>_&&(j(p)<'C'?m\|=i*9/8%2+1:W+=j(p)>'N'?9:j(p)=='N')),W*2+m<3)` | 82 | `(m=W=0,b.map((p,i)=>p&&(p<4?m\|=i*9/8%2+1:W+=p>9?p>11:9)),W*2+m<3)` | 65 |
 | Oyunun bütün bitişleri | `?'IM':$>4?'5R':n>149&&'75':V(t)?t?'B#':'W#':'SM'` | 48 | `?'IM':$>4?'5R':n>149?'75':0:V(t)?'WB'[t]+'#':'SM'` | 49 |
-| **toplam** | | **195** | | **178** |
+| **toplam** | | **194** | | **176** |
 
 İki dosyanın da onda birinden az. Bir satranç programının pahalı kısmı hiçbir zaman kural kitabı olmadı.
 
@@ -472,7 +473,7 @@ Aynı sorular, iki tahtaya ayrı ayrı:
 | `s` tarafının şahı | `b.indexOf('kK'[+s])` | 19 | `b[Q](10+s)` | 10 |
 | geçerken alabilecek rakip piyon | `b[x]=='Pp'[t]` | 13 | `b[x]==17-p` | 10 |
 | Beyaz'ın yazı rengi | `b[u]<U&b[u]>'-'` | 15 | `b[u]&1` | 6 |
-| fil mi? ağır taş mı? (materyal) | `j(p)<'C'` … `j(p)>'N'?9:j(p)=='N'` | 28 | `p<4` … `p<10?9:p>11` | 14 |
+| fil mi? ağır taş mı? (materyal) | `j(p)<'C'` … `j(p)>'N'?9:j(p)=='N'` | 28 | `p<4` … `p>9?p>11:9` | 14 |
 | taş karakteri | `'\xA0♝♚♞♟♛♜'['-BKNPQR'.search(j(b[u]))]` | 51 | `'\xA0♝♜♛♟♚♞'[b[u]>>1]` | 33 |
 
 Rengi, yeteneği ve sırayı tek bir küçük tam sayıya yükleyen bir kodlama seçmek, bir dizgenin etrafına fazladan koşullar yazmaktan daha kısadır. Ama her yerde bedava değildir; parça parça sayım sayıların nerede kaybettiğini gösterir:
@@ -481,18 +482,18 @@ Rengi, yeteneği ve sırayı tek bir küçük tam sayıya yükleyen bir kodlama 
 | --- | --- | --- | --- |
 | takma adlar | 48 | 34 | +14 |
 | durum | 75 | 90 | −15 |
-| `G` geometri | 280 | 259 | +21 |
+| `G` geometri | 278 | 257 | +21 |
 | `V` saldırı | 64 | 50 | +14 |
 | `L` yasallık | 95 | 110 | −15 |
 | `M` hamle yazma | 227 | 216 | +11 |
 | `d` çizim | 287 | 269 | +18 |
-| `A` uygula ve hükmet | 267 | 233 | +34 |
+| `A` uygula ve hükmet | 266 | 231 | +35 |
 | geri kalan her şey | 635 | 631 | +4 |
-| **dosya** | **1.978** | **1.892** | **+86** |
+| **dosya** | **1.975** | **1.888** | **+87** |
 
 - **Başlangıç konumu sayılarla daha uzundur:** iki tahta da kendini heceler, ama sayısal olan rakamlarını sayıya çevirmek için arkasından bir `.map()` öder.
 - **`L` kodlama yüzünden değil, tasarım yüzünden farklıdır.** Harf tahtasında `L(i,u)` tek bir hamlenin yasal olup olmadığını yanıtlar. Sayısal tahtada `L(i)` yasal hedeflerin listesini döndürür; bu da `d`'nin vurgulamayı her çizimde bir kez kurmasını (`s=L(i)`) ve `M`'nin `~L(x)[Q](e)` diye sormasını sağlar.
-- **Diğer her yerde harfler öder:** takma adlar, `G`, `V`, `M`, `d` ve `A` boyunca +112 bayt — yukarıdaki tablodaki her renk testi, boşluk testi ve büyük harfe çevirme. Sayıların kaybettiği 30 bayt düşülünce net fark +82 olur; dört bayt daha işaretlemeden gelir: harf dosyası, ayrıştırıcının zaten gerek duymadığı bir paragraf kapanış etiketini hiç yazmamıştı.
+- **Diğer her yerde harfler öder:** takma adlar, `G`, `V`, `M`, `d` ve `A` boyunca +113 bayt — yukarıdaki tablodaki her renk testi, boşluk testi ve büyük harfe çevirme. Sayıların kaybettiği 30 bayt düşülünce net fark +83 olur; dört bayt daha işaretlemeden gelir: harf dosyası, ayrıştırıcının zaten gerek duymadığı bir paragraf kapanış etiketini hiç yazmamıştı.
 
 Harf tarafında 86 baytın karşılığı: bir hata ayıklayıcıdan doğrudan okunabilen bir tahta ve temsil ettiği konuma benzeyen bir tekrar anahtarı.
 
@@ -530,20 +531,20 @@ Taş karakterleri Unicode `U+265A`–`U+265F` aralığındadır ve Beyaz için C
 | takma adlar | 48 | 34 | `N` `a` `U` `j` · `N` `a` `Q` |
 | durum | 75 | 90 | FEN alanları |
 | `z`, `R` | 20 | 20 | sonuç kodu, tekrar tablosu |
-| `G` | 280 | 259 | bu taş o kareye ulaşabilir mi |
+| `G` | 278 | 257 | bu taş o kareye ulaşabilir mi |
 | `V` | 64 | 50 | bu kare saldırı altında mı |
 | `L` | 95 | 110 | bu hamle yasal mı — oyna, sor, geri al |
 | `C` | 27 | 27 | bir karenin hangi rok hakkını kaybettirdiği |
 | `M` | 227 | 216 | sayaç, terfi, geçerken alınan piyon, kale atlaması, geçerken alma karesi |
 | kurulum | 158 | 154 | terfi düğmeleri ve 64 hücre, üretilmiş |
 | `d` | 287 | 269 | tahtayı ve durum satırını çiz |
-| `A` | 267 | 233 | hamleyi uygula, sonra hükmü ver |
+| `A` | 266 | 231 | hamleyi uygula, sonra hükmü ver |
 | `S` | 91 | 93 | tıklama işleyicisi |
 | `d()` | 3 | 3 | ilk çizim |
 | virgüller, noktalı virgüller, satır sonları | 42 | 40 | bu yerleşim maliyetine değer |
-| **toplam** | **1.978** | **1.892** | |
+| **toplam** | **1.975** | **1.888** | |
 
-Başka bir açıdan bölünce: kurallar — durum, `z`/`R`, `G`, `V`, `L`, `C`, `M`, `A` — **1.055** ve **1.005** bayt tutar; onları gösteren sayfa — işaretleme, CSS, betik etiketleri, kurulum, `d`, `S` ve ilk çizim — **833** ve **813**. Geri kalanı takma adlar ve ayraçlardır. Kural kitabı ile onu gösteren tahta aşağı yukarı aynı tutar.
+Başka bir açıdan bölünce: kurallar — durum, `z`/`R`, `G`, `V`, `L`, `C`, `M`, `A` — **1.052** ve **1.001** bayt tutar; onları gösteren sayfa — işaretleme, CSS, betik etiketleri, kurulum, `d`, `S` ve ilk çizim — **833** ve **813**. Geri kalanı takma adlar ve ayraçlardır. Kural kitabı ile onu gösteren tahta aşağı yukarı aynı tutar.
 
 ---
 
@@ -559,6 +560,7 @@ Motorlar okunarak değil çalıştırılarak denetlendi. İki dosya da bir DOM u
 - **Görüntü**, her dosyanın bir önceki sürümüyle rastgele oyunlarda, terfiler dahil, hücre hücre karşılaştırıldı: taş karakteri, renk, arka plan, çerçeve, durum satırı, seçici.
 - **İşaretleme**, Ders 6'da anlatıldığı gibi.
 - **Eylül 2026 kural optimizasyonları**, iki dosyada da, bir önceki sürüme karşı. Piyonun çift adımı ve rok `S` ile yürüyor, rok kalesi şahın hedefinden sayılıyor, başlangıç yatayı ve kare rengi testleri kısaldı, piyon dalı alış ve itiş için tek bir ortak soru soruyor, geçerken alma karesi tek bir listeyle yazılıyor. Her yarım hamleden sonra yasal hamle listeleri ve geçerken alma karesi karşılaştırılan rastgele oyunlar (50 ve 85 oyun), arka yatayları doldurup şahın geçtiği karelere rakip kale ve vezir koyan bir rok zorlama testi (dosya başına 241.920 geometri çağrısı) ve açmazlı, piyon yoğun pozisyonlarda 811 çift adımda geçerken alma karesi ile tekrar anahtarının karşılaştırılması: hiçbir yerde fark yok. `hexadecimal.html`'de CPW pozisyonlarında 3. derinliğe kadar perft geçiyor. İşaretleme, `d` ve sonuç satırları değişmedi.
+- **Ekim 2026 kural optimizasyonları**, iki dosyada da, bir önceki sürüme karşı. Rok kalesinin karesi `f+=k>0||-2`, başlangıç yatayı testi `y%6<2` diye yazılıyor; materyal testi kare rengini `i*9/8%2+1` diye yazıyor, `hexadecimal.html`'de ağırlığı da `p>9?p>11:9` diye. `index.html` 1.978 bayttan 1.975'e, `hexadecimal.html` 1.892'den 1.888'e indi. Her taş, hedef ve tehdit kipi için hamle üretici, yasal hamleler, materyal testi ve her yarım hamleden sonraki tam durum bir önceki sürümle karşılaştırıldı — `index.html` için rastgele kendi kendine oyunlarda, `hexadecimal.html` için 250 pozisyonda: fark yok. Sanity perft geçiyor.
 
 ---
 
