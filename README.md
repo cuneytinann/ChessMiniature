@@ -2,7 +2,7 @@
 
 # ChessMiniature
 
-A two-player chess arbiter in **1,902 bytes** of one HTML file, and its twin in **1,838 bytes**. No libraries, no build step, no server, no packer. Download a file, double-click, play.
+A two-player chess arbiter in **1,895 bytes** of one HTML file, and its twin in **1,817 bytes**. No libraries, no build step, no server, no packer. Download a file, double-click, play.
 
 Both files enforce the same rules. `index.html` stores the board as letters on sixty-four squares, the way a FEN does. `hexadecimal.html` stores it as numbers on a 0x88 board, the representation FideLite's engine uses. Put side by side, they are a small course in how few characters the rules of chess need, and in what a choice of representation costs.
 
@@ -23,7 +23,7 @@ Click a piece, click a destination. Legal targets turn amber, the selected squar
 
 Nothing here is packed or minified by a tool. **Right-click → View Page Source** (`Ctrl` `U`, or `⌥` `⌘` `U` on macOS) shows the entire program, and that is the intended way to use this repository: open the page, play a few moves, then read the source that just refereed them.
 
-The script is one comma-separated declaration chain in dependency order, broken so that one line holds one idea. Both files are 56 lines long and run in the same order, part by part: the page, the state and the start of `G` sit at the same height in both, and so do the verdict, the click handler and the first draw. In between they differ where the engines do. Line breaks carry no meaning: strip them from either script and the syntax tree is identical.
+The script is one comma-separated declaration chain in dependency order — in `hexadecimal.html` split once by the `for…in` that lays out the board — broken so that one line holds one idea. Both files are 56 lines long and run in the same order, part by part: the page, the state and the start of `G` sit at the same height in both, and so do the verdict, the click handler and the first draw. In between they differ where the engines do. Line breaks carry no meaning: strip them from either script and the syntax tree is identical.
 
 ```
 index.html         aliases → state → G → T → M → L → C → setup → d → A → S
@@ -72,7 +72,7 @@ For the full arbiter — clock, draw offers and claims, resignation, flag fall, 
 
 ```js
 b=[...`rnbqkbnrpppppppp${(_='-').repeat(32)}PPPPPPPPRNBQKBNR`],t=1,c=15,e=_,n=0,   // index.html
-b=[],[...'dcebaecd99999999'+'0'.repeat(32)+'1111111154632645'].map((p,j)=>b[j*2-j%8]='0x'+p-0),t=8,c=15,e=8,n=0,   // hexadecimal.html
+b=[];for(j in s='dcebaecd99999999'+'0'.repeat(32)+'1111111154632645')b[j*2-j%8]='0x'+s[j]-0;t=8,c=15,e=8,n=0,   // hexadecimal.html
 ```
 
 Both lines are a FEN, field for field: **piece placement, side to move, castling rights, en passant square, halfmove clock.** The fullmove number is the only field left out, because no rule reads it: the 50- and 75-move rules count plies, and repetition is decided by position, not by move number.
@@ -152,7 +152,7 @@ Legality is not a second move generator. It is one trick:
 - `L(i,x)` tries the candidate move on a copy of the board, asks `T`, and puts the board back.
 - It tries the move with the **raw move**, which only moves pieces, on a fresh copy — `[...b]` on the letter board, `b.slice()` on the numeric one — so `L` puts the board back with `b=q` and nothing else. The raw move is `M` on the letter board and `U` on the numeric one. What only a real move does — castling rights, the clock, the side to move, the en passant square, the key — is written once per real move: inside `A` on the letter board, in the numeric board's `M`, which only `A` calls. Either way, `A` is the only function that makes anything permanent.
 
-The raw move takes the rook along when the king castles: a second raw move, from the rook's square to the square the king passed — `j(p)+d=='K2'&&M(r,Q)` on the letter board, a king two squares away read as one string, and `d-8||U(r,Q)` on the numeric one. It finds the rook where `G` left it: checking a castling move, `G` writes the rook's square to `r` (Lesson 2). So `L` has to run right before the raw move for the same move — and it always does, because the click handler asks `L` and only then calls `A`.
+The raw move takes the rook along when the king castles: a second raw move, from the rook's square to the square the king passed — `j(p)+d=='K2'?M(r,Q):…` on the letter board, a king two squares away read as one string, and `d-8?…:U(r,Q)` on the numeric one. Both sit in the value the raw move returns: castling returns what the rook's hop returns, the no-square value. It finds the rook where `G` left it: checking a castling move, `G` writes the rook's square to `r` (Lesson 2). So `L` has to run right before the raw move for the same move — and it always does, because the click handler asks `L` and only then calls `A`.
 
 The dependency runs backwards in exactly two places, and both come from the rules, not from the code. `G` calls `T` because castling cannot be judged without asking whether the king stands in check or crosses an attacked square; the path to the rook is walked last, after both attack tests. The real move calls `L` because the en passant square may only be written if the capture is genuinely legal:
 
@@ -180,9 +180,9 @@ Chess programs in code-golf collections routinely drop the halfmove clock, the r
 | Halfmove clock | `n=P\|b[f]>_?0:n+1` | 16 | `n=!b[x]*b[i]&6&&n+1` | 19 |
 | Repetition counter | `R=G[k=b+t+e+c]=-~G[k]` | 21 | `k=b+e+t+c` · `R=G[…]=-~G[k]` | 21 |
 | Castling rights, all four | `C=i=>'20003001'[i%56]<<i/28` | 27 | `C=i=>'20003001'[i%112]<<i/56` | 28 |
-| Insufficient material, both sides | `(m=W=0,b.map((p,i)=>(P=j(p))=='B'?m\|=i*9/8%2+1:W+=P>'N'?9:P>'M'),W*2+m<3)` | 73 | `(m=W=0,b.map((p,i)=>p&&(p%8>5?m\|=i%15%2+1:W+=p%8==4\|\|p%8-2&&9)),W*2+m<3)` | 72 |
+| Insufficient material, both sides | `(m=W=0,b.map((p,i)=>(P=j(p))=='B'?m\|=i*9/8%2+1:W+=P>'N'?9:P>'M'),W*2+m<3)` | 73 | `(m=W=0,b.map((p,i)=>p%8>5?m\|=i%15%2+1:W+=p%2?9:p/4&1),W*2+m<3)` | 62 |
 | Every ending | `?'IM':R>4?'5R':n>149&&'75':T()?t?'B#':'W#':'SM'` | 47 | `?'IM':R>4?'5R':n>149&&'75':T()?t?'B#':'W#':'SM'` | 47 |
-| **total** | | **184** | | **187** |
+| **total** | | **184** | | **177** |
 
 About a tenth of either file. The expensive part of a chess program was never the rulebook.
 
@@ -190,7 +190,7 @@ About a tenth of either file. The expensive part of a chess program was never th
 
 **Castling rights** are one string: the digit under a square of the first or last rank is the right that square forfeits when a piece leaves it or lands on it, shifted to the other colour's bits on the far rank — by `i/28` on the letter board, `i/56` on 0x88: 0 on one end of the array, 2 on the other. King and rook squares carry their bits; every other square yields `0`. Every move clears both of its squares: `c&=~C(i)&~C(f)` in `A` on the letter board, `c&=~C(i)&~C(x)` in `M` on the numeric one.
 
-**Insufficient material** is one pass and one comparison. `m` collects the square colours of the bishops as bits (1 or 2; both colours make 3), written `i*9/8%2` on the letter board and `i%15%2` on 0x88. `W` counts a knight as 1 and any pawn, rook or queen as 9; kings add nothing. On the letter board `P>'N'?9:P>'M'` says exactly that: `P`, `Q` and `R` sort after `N`, `N` after `M`, and a king or the empty square `-` before both, so empty squares need no test of their own. Then `W*2+m<3` holds exactly for bare kings, a single knight, or bishops that all stand on one square colour — on either side. Two knights, bishop and knight, opposite-coloured bishops, or a knight on each side all come out at 3 or more, and play continues.
+**Insufficient material** is one pass and one comparison. `m` collects the square colours of the bishops as bits (1 or 2; both colours make 3), written `i*9/8%2` on the letter board and `i%15%2` on 0x88. `W` counts a knight as 1 and any pawn, rook or queen as 9; kings add nothing. On the letter board `P>'N'?9:P>'M'` says exactly that: `P`, `Q` and `R` sort after `N`, `N` after `M`, and a king or the empty square `-` before both, so empty squares need no test of their own. On the numeric board `p%2?9:p/4&1` says the same with the codes of Lesson 5: pawn, queen and rook are the odd codes, and among the rest `p/4&1`, the low bit of a quarter of the code, is 1 only for the knight, 4 or 12 — a king, 2 or 10, and the empty square, 0, add nothing, so here too empty squares need no test of their own. Bishops are taken first, by `p%8>5`. Then `W*2+m<3` holds exactly for bare kings, a single knight, or bishops that all stand on one square colour — on either side. Two knights, bishop and knight, opposite-coloured bishops, or a knight on each side all come out at 3 or more, and play continues.
 
 **Claims and declarations.** A draw that must be *claimed* needs a player to claim it, which needs a button. This build has no such layer, so it keeps only what an arbiter declares on its own: 5-fold repetition, the 75-move rule, insufficient material, mate and stalemate. You can still watch `R=` climb to 3 and `M=` pass 99 — under FIDE those two thresholds are claims, not declarations, so they do not end the game here.
 
@@ -217,7 +217,7 @@ The same questions, asked of each board:
 | the king of the side to move | `b.indexOf('kK'[t])` | 18 | `b.indexOf(2+t)` | 14 |
 | the pawn that may capture en passant | `p=='pP'[t]` | 10 | `p==1+t` | 6 |
 | White's text colour | `b[D]<U&b[D]>_` | 13 | `b[D]&8` | 6 |
-| bishop? heavy piece? (material) | `(P=j(p))=='B'` … `P>'N'?9:P>'M'` | 26 | `p%8>5` … `p%8==4\|\|p%8-2&&9` | 21 |
+| bishop? heavy piece? (material) | `(P=j(p))=='B'` … `P>'N'?9:P>'M'` | 26 | `p%8>5` … `p%2?9:p/4&1` | 16 |
 | the piece glyph | `'\xA0♝♚♞♟♛♜'['-BKNPQR'.search(j(b[D]))]` | 51 | `'\xA0♟♚♛♞♜♝'[b[D]&7]` | 32 |
 
 `P-4` and `P-1` are zero for their piece, not true: `G` and `U` branch on them the other way round. In `U`, `P` is `b[i]-t`, the type of a piece of the side to move.
@@ -227,20 +227,20 @@ Choosing an encoding that packs colour, capability and order into one small inte
 | part | letters | numbers | letters − numbers |
 | --- | --- | --- | --- |
 | aliases | 49 | 13 | +36 |
-| state | 75 | 106 | −31 |
-| `G` geometry | 276 | 250 | +26 |
+| state | 75 | 103 | −28 |
+| `G` geometry | 270 | 245 | +25 |
 | `T` attack | 61 | 52 | +9 |
-| moves: `M` `L` `A` · `U` `L` `M` `A` | 520 | 529 | −9 |
+| moves: `M` `L` `A` · `U` `L` `M` `A` | 519 | 516 | +3 |
 | `d` draw | 284 | 266 | +18 |
 | everything else | 637 | 622 | +15 |
-| **file** | **1,902** | **1,838** | **+64** |
+| **file** | **1,895** | **1,817** | **+78** |
 
-- **The starting position is longer as numbers:** both boards spell themselves, but the numeric one pays for an empty array and a `.map()` that turns its digits into numbers and spreads them over the 0x88 rows with `b[j*2-j%8]`.
+- **The starting position is longer as numbers:** both boards spell themselves, but the numeric one pays for an empty array and a `for…in` loop that turns its digits into numbers and spreads them over the 0x88 rows with `b[j*2-j%8]`.
 - **The aliases go away on 0x88.** The letter board needs `a` (`Math.abs`) for its distances, `U` (`'a'`) for the case boundary and `j` (`toUpperCase`); the numeric board keeps only `N`. A signed difference carries its own direction, and the colour is a bit.
-- **The moves are counted together,** because the real move sits in different places. Both boards try a move with a raw move, `M` and `U`; the numeric board makes the real move in a function of its own, its `M`, and only judges in `A`, while the letter board does both in `A` (Lesson 3). Taken as a whole, the letters now pay 9 bytes less: they save the extra function.
+- **The moves are counted together,** because the real move sits in different places. Both boards try a move with a raw move, `M` and `U`; the numeric board makes the real move in a function of its own, its `M`, and only judges in `A`, while the letter board does both in `A` (Lesson 3). Taken as a whole, the letters now pay 3 bytes more: saving the extra function no longer makes up for the shorter numeric verdict (Lesson 4).
 - **Everywhere else the letters pay too,** in `G`, `T` and `d`: every colour test, emptiness test and case conversion in the table above. The markup is the same in both files, byte for byte.
 
-What 64 bytes buy on the letter side: a board you can read straight out of a debugger, and a repetition key that looks like the position it stands for.
+What 78 bytes buy on the letter side: a board you can read straight out of a debugger, and a repetition key that looks like the position it stands for.
 
 ## Lesson 6 — Standards, not tricks
 
@@ -274,23 +274,23 @@ Every byte of both files, by part, in the order they appear.
 | markup and CSS | 277 | 277 | board, status line, picker, colours, layout |
 | `<script>` tags | 17 | 17 | |
 | aliases | 49 | 13 | `N` `a` `U` `j` · `N` |
-| state | 75 | 106 | the FEN fields, in FEN's order |
-| `G` | 276 | 250 | can this piece reach that square |
+| state | 75 | 103 | the FEN fields, in FEN's order |
+| `G` | 270 | 245 | can this piece reach that square |
 | `T` | 61 | 52 | is this square attacked |
-| raw move: `M` · `U` | 141 | 138 | pieces only, on a fresh copy of the board; promotion, en passant victim, rook hop; returns the square a double step jumps over |
+| raw move: `M` · `U` | 140 | 137 | pieces only, on a fresh copy of the board; promotion, en passant victim, rook hop; returns the square a double step jumps over |
 | `L` | 62 | 55 | is this move legal — try it, ask, take it back |
 | `C` | 27 | 28 | which castling right a square forfeits |
 | `M` | — | 114 | the real move: clock, castling rights, `U`, side to move, en passant square, key |
 | `z`, `R` | 19 | 19 | result code, repetition count; the table is `G` |
 | setup | 158 | 154 | promotion buttons and the 64 cells, generated |
 | `d` | 284 | 266 | draw the board and the status line |
-| `A` | 317 | 222 | apply the move, then the verdict; in `index.html` also the real move: castling rights, clock, `M`, side to move, en passant square, key |
+| `A` | 317 | 210 | apply the move, then the verdict; in `index.html` also the real move: castling rights, clock, `M`, side to move, en passant square, key |
 | `S` | 95 | 83 | the click handler |
 | `d()` | 3 | 3 | first draw |
 | commas, semicolons, line breaks | 41 | 41 | the layout is worth its weight |
-| **total** | **1,902** | **1,838** | |
+| **total** | **1,895** | **1,817** | |
 
-Split another way: the rules — state, `z`/`R`, `G`, `T`, the raw move, `L`, `C`, `M`, `A` — take **978** and **984** bytes; the page that shows them — markup, CSS, script tags, setup, `d`, `S` and the first draw — takes **834** and **800**. The rest is aliases and separators. The rulebook and the board that displays it cost about the same.
+Split another way: the rules — state, `z`/`R`, `G`, `T`, the raw move, `L`, `C`, `M`, `A` — take **971** and **963** bytes; the page that shows them — markup, CSS, script tags, setup, `d`, `S` and the first draw — takes **834** and **800**. The rest is aliases and separators. The rulebook and the board that displays it cost about the same.
 
 ---
 
@@ -310,6 +310,7 @@ The engines were checked by running them, not by reading them. Both files were d
 - **The 0x88 rewrite of October 2026.** `hexadecimal.html` moved from its own 8×8 board to FideLite's 0x88 engine: `G`, `T`, `U`, `L`, `C` and `M` are, line breaks aside, the corresponding parts of FideLite's `engine.js`. The page around them looks and behaves as before: the same markup apart from the table's id, now `u` because `T` names the attack test, and the same picker, status line and result codes. `index.html` took the same names wherever the two do the same job — `T` for the attack test, `R` for the repetition count, `k` for the key, `G` as the repetition table, `u` for the table — and went from 1,975 to 1,972 bytes; `hexadecimal.html` went from 1,888 to 1,838. perft on the new numeric file: 197,281 from the starting position at depth 4, 97,862 on Kiwipete at depth 3, and 43,238, 9,467 and 62,379 on CPW positions 3, 4 and 5 at depths 4, 3 and 3. Each file was then played in headless Chromium against its previous build, the same display square clicked in both after every ply, comparing every cell's glyph and style, the status line, the picker, the full game state and the legal move lists: 1,358 comparisons for the numeric file, with every result code reached and promotions through the picker, and 270 for the letter file. No difference. Both files and the three generated documents of Lesson 6 validate clean.
 - **The 0x88 tactics of October 2026.** `index.html` took over the numeric file's way of moving. Its raw move `M` only moves pieces, on a fresh copy, so `L` puts back the board alone. The real move — castling rights, clock, side to move, en passant square, key — moved into `A`. The en passant question is asked once per real move, after the side switch, of every pawn of the side to move. The raw move hops the castling rook from the square `G` writes to `r`, `T` reads the side from `t`, and the starting position is built with `padEnd`, which also names the empty square and sets the en passant field. Markup, CSS, picker, status line and drawing did not change. `index.html` went from 1,972 to 1,897 bytes; `hexadecimal.html` is unchanged. The two files were driven by the same clicks, the same display square in both, with the full state compared after every click — board, side to move, castling rights, en passant square, clock, repetition count, result and status line: 300 games, 105,888 clicks with mistaken ones in between, 59 castlings, 44 en passant captures and 181 promotions through the picker. Then targeted castling, promotion and en passant cases, the pinned capturer included. In headless Chromium the two files were played side by side: 488 comparisons of every cell's glyph and style, the status line and the picker, and 274 screenshots compared pixel for pixel. perft on the letter file, against FideLite's `engine.js`: CPW positions 1 to 6 and the mirrored 4 to depth 3, and two en passant positions. No difference anywhere. Both files and the three generated documents of Lesson 6 validate clean with Nu 26.10.12.
 - **The FEN order of October 2026.** `index.html` writes its state in FEN's order again: the board is built with `(_='-').repeat(32)`, which names the empty square, and `e=_`, `n=0` follow `t` and `c` as their own fields; the result code starts beside the repetition count, `z=0,R=…`, the way the numeric file has it. `index.html` went from 1,897 to 1,902 bytes on purpose; `hexadecimal.html` is unchanged. Only the state line and the place of `z=0` changed — every function, the markup and the CSS are the same text. The two versions were loaded side by side and every global they set — board, side to move, castling rights, en passant square, clock, result code, repetition key and count, selection — came out equal, and so did the first drawn screen.
+- **The engine update of October 2026**, both files, against the previous build. `hexadecimal.html` follows FideLite's new `engine.js`, so `G`, `T`, `U`, `L`, `C` and `M` are again, line breaks aside, its corresponding parts: the pawn branch closes with `?…:0` and `>b[f]` in place of `&&(…)` and `&!b[f]`, castling asks `T()+T(i+s)<S()`, and the rook hop sits in `U`'s return value, `d-8?d-1024?8:Q:U(r,Q)`. The board is laid out by `for(j in s='…')` instead of a `.map()`, still spelled out; the material weights are written `p%2?9:p/4&1`, the same weights with no separate test for empty squares; and the verdict asks for a legal move with `p+~t>>3?0:`. `index.html` took the same castling test, the pawn branch's `?…:0` with `&S()`, and the rook hop `j(p)+d=='K2'?M(r,Q):` in the raw move's return value. No rule and no algorithm changed, and both files are still 56 lines long, part by part at the same height. `hexadecimal.html` went from 1,838 to 1,817 bytes and `index.html` from 1,902 to 1,895. The two versions of each file were driven in Node by the same clicks, the same display square in both, with mistaken clicks in between, comparing after every click the full state, the selection, the status line, the picker and every cell's glyph and style, and after every ply the legal move lists: 40 games and 13,965 clicks per file, 5,998 move lists, 24 castlings, 4 en passant captures and 48 promotions through the picker, ending in `IM`, `SM` and `W#`. perft on the new numeric file: 20 / 400 / 8,902 / 197,281 from the starting position at depths 1–4. No difference anywhere. The markup, and the markup the script writes, did not change.
 
 ---
 
@@ -329,7 +330,7 @@ MIT
 
 # ChessMiniature (Türkçe)
 
-Tek bir HTML dosyasında **1.902 bayt** içinde yazılmış iki kişilik bir satranç hakemi ve onun **1.838 baytlık** ikizi. Kütüphane yok, derleme adımı yok, sunucu yok, paketleyici yok. Bir dosyayı indirin, çift tıklayın, oynayın.
+Tek bir HTML dosyasında **1.895 bayt** içinde yazılmış iki kişilik bir satranç hakemi ve onun **1.817 baytlık** ikizi. Kütüphane yok, derleme adımı yok, sunucu yok, paketleyici yok. Bir dosyayı indirin, çift tıklayın, oynayın.
 
 İki dosya da aynı kuralları uygular. `index.html` tahtayı bir FEN gibi altmış dört karede harflerle tutar; `hexadecimal.html` sayılarla, FideLite motorunun kullandığı 0x88 tahtasında. Yan yana okunduklarında, satranç kurallarının ne kadar az karakterle yazılabileceğine ve bir veri gösterimi seçiminin neye mal olduğuna dair küçük bir derstirler.
 
@@ -350,7 +351,7 @@ Bir taşa, sonra hedef kareye tıklayın. Yasal hedefler kehribar rengine döner
 
 Buradaki hiçbir şey bir araçla paketlenmemiş ya da küçültülmemiştir. **Sağ tık → Sayfa Kaynağını Görüntüle** (`Ctrl` `U`, macOS'ta `⌥` `⌘` `U`) programın tamamını gösterir ve bu deponun amaçlanan kullanımı da budur: sayfayı açın, birkaç hamle oynayın, sonra o hamleleri az önce yöneten kaynağı okuyun.
 
-Betik, bağımlılık sırasına dizilmiş, virgülle ayrılmış tek bir bildirim zinciridir; her satırda bir fikir olacak şekilde bölünmüştür. İki dosya da 56 satırdır ve parça parça aynı sırayla ilerler: sayfa, durum ve `G`'nin başı ikisinde de aynı yüksekliktedir; hüküm, tıklama işleyicisi ve ilk çizim de öyle. Aradaki satırlar motorların ayrıldığı yerde ayrılır. Satır sonlarının bir anlamı yoktur: iki betikten de silindiğinde sözdizimi ağacı birebir aynı kalır.
+Betik, bağımlılık sırasına dizilmiş, virgülle ayrılmış tek bir bildirim zinciridir — `hexadecimal.html`'de tahtayı yerleştiren `for…in` onu bir kez böler — ve her satırda bir fikir olacak şekilde bölünmüştür. İki dosya da 56 satırdır ve parça parça aynı sırayla ilerler: sayfa, durum ve `G`'nin başı ikisinde de aynı yüksekliktedir; hüküm, tıklama işleyicisi ve ilk çizim de öyle. Aradaki satırlar motorların ayrıldığı yerde ayrılır. Satır sonlarının bir anlamı yoktur: iki betikten de silindiğinde sözdizimi ağacı birebir aynı kalır.
 
 ```
 index.html         takma adlar → durum → G → T → M → L → C → kurulum → d → A → S
@@ -399,7 +400,7 @@ Eksiksiz hakem için — saat, beraberlik teklifleri ve talepleri, terk, süre b
 
 ```js
 b=[...`rnbqkbnrpppppppp${(_='-').repeat(32)}PPPPPPPPRNBQKBNR`],t=1,c=15,e=_,n=0,   // index.html
-b=[],[...'dcebaecd99999999'+'0'.repeat(32)+'1111111154632645'].map((p,j)=>b[j*2-j%8]='0x'+p-0),t=8,c=15,e=8,n=0,   // hexadecimal.html
+b=[];for(j in s='dcebaecd99999999'+'0'.repeat(32)+'1111111154632645')b[j*2-j%8]='0x'+s[j]-0;t=8,c=15,e=8,n=0,   // hexadecimal.html
 ```
 
 İki satır da alan alan bir FEN'dir: **taş dizilimi, sırası gelen taraf, rok hakları, geçerken alma karesi, yarım hamle sayacı.** Dışarıda kalan tek alan tam hamle numarasıdır, çünkü onu hiçbir kural okumaz: 50 ve 75 hamle kuralları yarım hamle sayar, tekrar ise hamle numarasına göre değil konuma göre belirlenir.
@@ -479,7 +480,7 @@ Yasallık ikinci bir hamle üreticisi değildir, tek bir numaradır:
 - `L(i,x)`, aday hamleyi tahtanın bir kopyasında dener, `T`'ye sorar ve tahtayı geri koyar.
 - Hamleyi **ham hamle** ile dener: yalnızca taşları, yeni bir kopya üzerinde oynatan fonksiyon — harf tahtasında `[...b]`, sayısal tahtada `b.slice()` — bu yüzden `L` tahtayı `b=q` ile geri koyar, başka hiçbir şeyi değil. Ham hamle harf tahtasında `M`, sayısal tahtada `U`'dur. Yalnızca gerçek bir hamlenin yaptıkları — rok hakları, sayaç, sıra, geçerken alma karesi, anahtar — gerçek hamle başına bir kez yazılır: harf tahtasında `A`'nın içinde, sayısal tahtada onun `M`'sinde; o `M`'yi de yalnızca `A` çağırır. Her iki durumda da kalıcı bir şey yapan tek fonksiyon `A`'dır.
 
-Şah rok yaptığında kaleyi de ham hamle götürür: kalenin karesinden şahın geçtiği kareye ikinci bir ham hamle — harf tahtasında `j(p)+d=='K2'&&M(r,Q)`, iki kare giden şah tek bir dizge olarak okunur; sayısal tahtada `d-8||U(r,Q)`. Kaleyi `G`'nin bıraktığı yerde bulur: bir rok hamlesini sınarken `G`, kalenin karesini `r`'ye yazar (Ders 2). Bu yüzden aynı hamle için `L`'nin ham hamleden hemen önce çalışması gerekir — ve her zaman öyle olur, çünkü tıklama işleyicisi önce `L`'ye sorar, `A`'yı ancak ondan sonra çağırır.
+Şah rok yaptığında kaleyi de ham hamle götürür: kalenin karesinden şahın geçtiği kareye ikinci bir ham hamle — harf tahtasında `j(p)+d=='K2'?M(r,Q):…`, iki kare giden şah tek bir dizge olarak okunur; sayısal tahtada `d-8?…:U(r,Q)`. İkisi de ham hamlenin döndürdüğü değerin içinde durur: rok, kale atlamasının döndürdüğünü, yani kare yok değerini döndürür. Kaleyi `G`'nin bıraktığı yerde bulur: bir rok hamlesini sınarken `G`, kalenin karesini `r`'ye yazar (Ders 2). Bu yüzden aynı hamle için `L`'nin ham hamleden hemen önce çalışması gerekir — ve her zaman öyle olur, çünkü tıklama işleyicisi önce `L`'ye sorar, `A`'yı ancak ondan sonra çağırır.
 
 Bağımlılık tam iki yerde geriye doğru akar ve ikisi de koddan değil kurallardan gelir. `G`, `T`'yi çağırır; çünkü rok, şahın şah altında olup olmadığı ya da saldırı altındaki bir kareden geçip geçmediği sorulmadan değerlendirilemez; kaleye giden yol iki saldırı testinden sonra, en son yürünür. Gerçek hamle `L`'yi çağırır; çünkü geçerken alma karesi ancak alış gerçekten yasalsa yazılabilir:
 
@@ -507,9 +508,9 @@ Kod golfü koleksiyonlarındaki satranç programları yarım hamle sayacını, t
 | Yarım hamle sayacı | `n=P\|b[f]>_?0:n+1` | 16 | `n=!b[x]*b[i]&6&&n+1` | 19 |
 | Tekrar sayacı | `R=G[k=b+t+e+c]=-~G[k]` | 21 | `k=b+e+t+c` · `R=G[…]=-~G[k]` | 21 |
 | Dört rok hakkının hepsi | `C=i=>'20003001'[i%56]<<i/28` | 27 | `C=i=>'20003001'[i%112]<<i/56` | 28 |
-| Yetersiz materyal, iki taraf birden | `(m=W=0,b.map((p,i)=>(P=j(p))=='B'?m\|=i*9/8%2+1:W+=P>'N'?9:P>'M'),W*2+m<3)` | 73 | `(m=W=0,b.map((p,i)=>p&&(p%8>5?m\|=i%15%2+1:W+=p%8==4\|\|p%8-2&&9)),W*2+m<3)` | 72 |
+| Yetersiz materyal, iki taraf birden | `(m=W=0,b.map((p,i)=>(P=j(p))=='B'?m\|=i*9/8%2+1:W+=P>'N'?9:P>'M'),W*2+m<3)` | 73 | `(m=W=0,b.map((p,i)=>p%8>5?m\|=i%15%2+1:W+=p%2?9:p/4&1),W*2+m<3)` | 62 |
 | Oyunun bütün bitişleri | `?'IM':R>4?'5R':n>149&&'75':T()?t?'B#':'W#':'SM'` | 47 | `?'IM':R>4?'5R':n>149&&'75':T()?t?'B#':'W#':'SM'` | 47 |
-| **toplam** | | **184** | | **187** |
+| **toplam** | | **184** | | **177** |
 
 İki dosyanın da aşağı yukarı onda biri. Bir satranç programının pahalı kısmı hiçbir zaman kural kitabı olmadı.
 
@@ -517,7 +518,7 @@ Kod golfü koleksiyonlarındaki satranç programları yarım hamle sayacını, t
 
 **Rok hakları** tek bir dizgedir: ilk ya da son yataydaki bir karenin altındaki rakam, o kareden bir taş ayrıldığında ya da oraya bir taş geldiğinde kaybedilen haktır; uzak yatayda öbür rengin bitlerine kaydırılır — harf tahtasında `i/28`, 0x88'de `i/56` kadar: dizinin bir ucunda 0, öbür ucunda 2. Şah ve kale kareleri kendi bitlerini taşır; diğer bütün kareler `0` verir. Her hamle iki karesini de temizler: harf tahtasında `A` içinde `c&=~C(i)&~C(f)`, sayısal tahtada `M` içinde `c&=~C(i)&~C(x)`.
 
-**Yetersiz materyal** tek geçiş ve tek karşılaştırmadır. `m`, fillerin durduğu kare renklerini bit olarak toplar (1 ya da 2; iki renk birden 3 eder); harf tahtasında `i*9/8%2`, 0x88'de `i%15%2` diye yazılır. `W` bir atı 1, herhangi bir piyon, kale ya da veziri 9 sayar; şahlar bir şey eklemez. Harf tahtasında `P>'N'?9:P>'M'` tam olarak bunu söyler: `P`, `Q` ve `R` alfabede `N`'den, `N` de `M`'den sonra gelir; şah ve boş kare `-` ikisinden de önce. Bu yüzden boş kareler için ayrı bir sınama gerekmez. Böylece `W*2+m<3` tam olarak şu durumlarda doğrudur: yalnız şahlar, tek bir at ya da hepsi aynı renk karede duran filler — hangi tarafta olursa olsun. İki at, fil ve at, zıt renkli filler ya da her iki tarafta birer at 3 ya da daha fazla verir ve oyun sürer.
+**Yetersiz materyal** tek geçiş ve tek karşılaştırmadır. `m`, fillerin durduğu kare renklerini bit olarak toplar (1 ya da 2; iki renk birden 3 eder); harf tahtasında `i*9/8%2`, 0x88'de `i%15%2` diye yazılır. `W` bir atı 1, herhangi bir piyon, kale ya da veziri 9 sayar; şahlar bir şey eklemez. Harf tahtasında `P>'N'?9:P>'M'` tam olarak bunu söyler: `P`, `Q` ve `R` alfabede `N`'den, `N` de `M`'den sonra gelir; şah ve boş kare `-` ikisinden de önce. Bu yüzden boş kareler için ayrı bir sınama gerekmez. Sayısal tahtada `p%2?9:p/4&1` aynı şeyi Ders 5'teki kodlarla söyler: piyon, vezir ve kale tek kodlardır; geri kalanlarda `p/4&1`, kodun dörtte birinin en düşük biti, yalnızca atta, 4 ya da 12'de, 1'dir — şah, 2 ya da 10, ve boş kare, 0, bir şey eklemez; burada da boş kareler için ayrı bir sınama gerekmez. Filleri önce `p%8>5` alır. Böylece `W*2+m<3` tam olarak şu durumlarda doğrudur: yalnız şahlar, tek bir at ya da hepsi aynı renk karede duran filler — hangi tarafta olursa olsun. İki at, fil ve at, zıt renkli filler ya da her iki tarafta birer at 3 ya da daha fazla verir ve oyun sürer.
 
 **Talepler ve ilanlar.** *Talep* edilmesi gereken bir beraberlik, onu talep edecek bir oyuncuya, o da bir düğmeye ihtiyaç duyar. Bu sürümde böyle bir katman yok; bu yüzden yalnızca bir hakemin kendiliğinden ilan ettiği bitişler tutulur: 5 kez tekrar, 75 hamle kuralı, yetersiz materyal, mat ve pat. `R=`'nin 3'e çıktığını, `M=`'nin 99'u geçtiğini yine de izleyebilirsiniz — FIDE'ye göre bu iki eşik ilan değil taleptir, bu yüzden burada oyunu bitirmezler.
 
@@ -544,7 +545,7 @@ Aynı sorular, iki tahtaya ayrı ayrı:
 | sırası gelen tarafın şahı | `b.indexOf('kK'[t])` | 18 | `b.indexOf(2+t)` | 14 |
 | geçerken alabilecek piyon | `p=='pP'[t]` | 10 | `p==1+t` | 6 |
 | Beyaz'ın yazı rengi | `b[D]<U&b[D]>_` | 13 | `b[D]&8` | 6 |
-| fil mi? ağır taş mı? (materyal) | `(P=j(p))=='B'` … `P>'N'?9:P>'M'` | 26 | `p%8>5` … `p%8==4\|\|p%8-2&&9` | 21 |
+| fil mi? ağır taş mı? (materyal) | `(P=j(p))=='B'` … `P>'N'?9:P>'M'` | 26 | `p%8>5` … `p%2?9:p/4&1` | 16 |
 | taş karakteri | `'\xA0♝♚♞♟♛♜'['-BKNPQR'.search(j(b[D]))]` | 51 | `'\xA0♟♚♛♞♜♝'[b[D]&7]` | 32 |
 
 `P-4` ve `P-1` kendi taşları için doğru değil sıfırdır: `G` ve `U` onlara göre ters yönden dallanır. `U` içinde `P`, `b[i]-t`'dir, yani sırası gelen tarafın bir taşının türü.
@@ -554,20 +555,20 @@ Rengi, yeteneği ve sırayı tek bir küçük tam sayıya yükleyen bir kodlama 
 | parça | harfler | sayılar | harfler − sayılar |
 | --- | --- | --- | --- |
 | takma adlar | 49 | 13 | +36 |
-| durum | 75 | 106 | −31 |
-| `G` geometri | 276 | 250 | +26 |
+| durum | 75 | 103 | −28 |
+| `G` geometri | 270 | 245 | +25 |
 | `T` saldırı | 61 | 52 | +9 |
-| hamleler: `M` `L` `A` · `U` `L` `M` `A` | 520 | 529 | −9 |
+| hamleler: `M` `L` `A` · `U` `L` `M` `A` | 519 | 516 | +3 |
 | `d` çizim | 284 | 266 | +18 |
 | geri kalan her şey | 637 | 622 | +15 |
-| **dosya** | **1.902** | **1.838** | **+64** |
+| **dosya** | **1.895** | **1.817** | **+78** |
 
-- **Başlangıç konumu sayılarla daha uzundur:** iki tahta da kendini heceler, ama sayısal olan boş bir diziye ve rakamlarını sayıya çevirip `b[j*2-j%8]` ile 0x88 satırlarına yayan bir `.map()`'e öder.
+- **Başlangıç konumu sayılarla daha uzundur:** iki tahta da kendini heceler, ama sayısal olan boş bir diziye ve rakamlarını sayıya çevirip `b[j*2-j%8]` ile 0x88 satırlarına yayan bir `for…in` döngüsüne öder.
 - **0x88'de takma adlar gider.** Harf tahtası uzaklıkları için `a`'ya (`Math.abs`), büyük-küçük harf sınırı için `U`'ya (`'a'`) ve `j`'ye (`toUpperCase`) ihtiyaç duyar; sayısal tahtada yalnızca `N` kalır. İşaretli bir fark yönünü kendisi taşır, renk de bir bittir.
-- **Hamleler birlikte sayılır,** çünkü gerçek hamle farklı yerlerde durur. İki tahta da bir hamleyi ham hamleyle, `M` ve `U` ile dener; sayısal tahta gerçek hamleyi ayrı bir fonksiyonda, kendi `M`'sinde yapar ve `A`'da yalnızca hükmeder, harf tahtası ikisini de `A`'da yapar (Ders 3). Bütün olarak harfler artık 9 bayt az öder: fazladan fonksiyonun bedelini ödemezler.
+- **Hamleler birlikte sayılır,** çünkü gerçek hamle farklı yerlerde durur. İki tahta da bir hamleyi ham hamleyle, `M` ve `U` ile dener; sayısal tahta gerçek hamleyi ayrı bir fonksiyonda, kendi `M`'sinde yapar ve `A`'da yalnızca hükmeder, harf tahtası ikisini de `A`'da yapar (Ders 3). Bütün olarak harfler artık 3 bayt fazla öder: fazladan fonksiyondan kurtulmaları, sayısal tahtanın kısalan hükmünü (Ders 4) artık karşılamıyor.
 - **Geri kalan yerlerde de harfler öder,** `G`, `T` ve `d` içinde: yukarıdaki tablodaki her renk testi, boşluk testi ve büyük harfe çevirme. İşaretleme iki dosyada da bayt bayt aynıdır.
 
-Harf tarafında 64 baytın karşılığı: bir hata ayıklayıcıdan doğrudan okunabilen bir tahta ve temsil ettiği konuma benzeyen bir tekrar anahtarı.
+Harf tarafında 78 baytın karşılığı: bir hata ayıklayıcıdan doğrudan okunabilen bir tahta ve temsil ettiği konuma benzeyen bir tekrar anahtarı.
 
 ## Ders 6 — Hile değil, standart
 
@@ -601,23 +602,23 @@ Taş karakterleri Unicode `U+265A`–`U+265F` aralığındadır ve Beyaz için C
 | işaretleme ve CSS | 277 | 277 | tahta, durum satırı, seçici, renkler, yerleşim |
 | `<script>` etiketleri | 17 | 17 | |
 | takma adlar | 49 | 13 | `N` `a` `U` `j` · `N` |
-| durum | 75 | 106 | FEN alanları, FEN sırasıyla |
-| `G` | 276 | 250 | bu taş o kareye ulaşabilir mi |
+| durum | 75 | 103 | FEN alanları, FEN sırasıyla |
+| `G` | 270 | 245 | bu taş o kareye ulaşabilir mi |
 | `T` | 61 | 52 | bu kare saldırı altında mı |
-| ham hamle: `M` · `U` | 141 | 138 | yalnızca taşlar, tahtanın yeni bir kopyasında; terfi, geçerken alınan piyon, kale atlaması; çift adımın üzerinden atladığı kareyi döndürür |
+| ham hamle: `M` · `U` | 140 | 137 | yalnızca taşlar, tahtanın yeni bir kopyasında; terfi, geçerken alınan piyon, kale atlaması; çift adımın üzerinden atladığı kareyi döndürür |
 | `L` | 62 | 55 | bu hamle yasal mı — dene, sor, geri al |
 | `C` | 27 | 28 | bir karenin hangi rok hakkını kaybettirdiği |
 | `M` | — | 114 | gerçek hamle: sayaç, rok hakları, `U`, sıra, geçerken alma karesi, anahtar |
 | `z`, `R` | 19 | 19 | sonuç kodu, tekrar sayısı; tablo `G`'dir |
 | kurulum | 158 | 154 | terfi düğmeleri ve 64 hücre, üretilmiş |
 | `d` | 284 | 266 | tahtayı ve durum satırını çiz |
-| `A` | 317 | 222 | hamleyi uygula, sonra hükmü ver; `index.html`'de gerçek hamle de burada: rok hakları, sayaç, `M`, sıra, geçerken alma karesi, anahtar |
+| `A` | 317 | 210 | hamleyi uygula, sonra hükmü ver; `index.html`'de gerçek hamle de burada: rok hakları, sayaç, `M`, sıra, geçerken alma karesi, anahtar |
 | `S` | 95 | 83 | tıklama işleyicisi |
 | `d()` | 3 | 3 | ilk çizim |
 | virgüller, noktalı virgüller, satır sonları | 41 | 41 | bu yerleşim maliyetine değer |
-| **toplam** | **1.902** | **1.838** | |
+| **toplam** | **1.895** | **1.817** | |
 
-Başka bir açıdan bölünce: kurallar — durum, `z`/`R`, `G`, `T`, ham hamle, `L`, `C`, `M`, `A` — **978** ve **984** bayt tutar; onları gösteren sayfa — işaretleme, CSS, betik etiketleri, kurulum, `d`, `S` ve ilk çizim — **834** ve **800**. Geri kalanı takma adlar ve ayraçlardır. Kural kitabı ile onu gösteren tahta aşağı yukarı aynı tutar.
+Başka bir açıdan bölünce: kurallar — durum, `z`/`R`, `G`, `T`, ham hamle, `L`, `C`, `M`, `A` — **971** ve **963** bayt tutar; onları gösteren sayfa — işaretleme, CSS, betik etiketleri, kurulum, `d`, `S` ve ilk çizim — **834** ve **800**. Geri kalanı takma adlar ve ayraçlardır. Kural kitabı ile onu gösteren tahta aşağı yukarı aynı tutar.
 
 ---
 
@@ -637,6 +638,7 @@ Motorlar okunarak değil çalıştırılarak denetlendi. İki dosya da bir DOM u
 - **Ekim 2026 0x88 geçişi.** `hexadecimal.html` kendi 8×8 tahtasından FideLite'ın 0x88 motoruna geçti: `G`, `T`, `U`, `L`, `C` ve `M`, satır sonları dışında, FideLite'ın `engine.js` dosyasındaki karşılıklarıyla aynıdır. Etraftaki sayfa eskisi gibi görünür ve çalışır: işaretleme, tablonun id'si dışında aynıdır (`T` artık saldırı testinin adı olduğu için id `u` oldu); seçici, durum satırı ve sonuç kodları da aynıdır. `index.html`, iki dosyanın aynı işi yaptığı her yerde aynı adları aldı — saldırı testi için `T`, tekrar sayısı için `R`, anahtar için `k`, tekrar tablosu olarak `G`, tablo için `u` — ve 1.975 bayttan 1.972'ye indi; `hexadecimal.html` 1.888'den 1.838'e. Yeni sayısal dosyada perft: başlangıç konumunda 4. derinlikte 197.281, Kiwipete'te 3. derinlikte 97.862, CPW 3., 4. ve 5. konumlarda 4., 3. ve 3. derinlikte 43.238, 9.467 ve 62.379. Ardından her dosya başsız Chromium'da bir önceki sürümüyle yan yana oynatıldı; her yarım hamleden sonra ikisinde de aynı ekran karesine tıklanıp her hücrenin taş karakteri ve stili, durum satırı, seçici, oyunun tam durumu ve yasal hamle listeleri karşılaştırıldı: sayısal dosyada 1.358 karşılaştırma, her sonuç koduna ulaşılarak ve seçiciyle terfiler dahil; harf dosyasında 270. Fark yok. İki dosya ve Ders 6'daki üç üretilmiş belge temiz doğrulanıyor.
 - **Ekim 2026 0x88 taktikleri.** `index.html`, sayısal dosyanın hamle yapma biçimini devraldı. Ham hamlesi `M` yalnızca taşları, yeni bir kopya üzerinde oynatıyor; bu yüzden `L` yalnız tahtayı geri koyuyor. Gerçek hamle — rok hakları, sayaç, sıra, geçerken alma karesi, anahtar — `A`'ya taşındı. Geçerken alma sorusu gerçek hamle başına bir kez, sıra değiştikten sonra, sırası gelen tarafın her piyonuna soruluyor. Rok kalesini ham hamle, `G`'nin `r`'ye yazdığı kareden atlatıyor; `T` tarafı `t`'den okuyor; başlangıç konumu, boş kare harfini de adlandıran ve geçerken alma alanını kuran `padEnd` ile yazılıyor. İşaretleme, CSS, seçici, durum satırı ve çizim değişmedi. `index.html` 1.972 bayttan 1.897'ye indi; `hexadecimal.html` değişmedi. İki dosya aynı tıklamalarla, ikisinde de aynı ekran karesine tıklanarak sürüldü ve her tıklamadan sonra tam durum karşılaştırıldı — tahta, sıra, rok hakları, geçerken alma karesi, sayaç, tekrar sayısı, sonuç ve durum satırı: arada yanlış tıklamalarla 300 oyun, 105.888 tıklama, 59 rok, 44 geçerken alma ve seçiciyle 181 terfi. Ardından açmazdaki alıcı dahil hedefli rok, terfi ve geçerken alma durumları. Başsız Chromium'da iki dosya yan yana oynatıldı: her hücrenin taş karakteri ve stili, durum satırı ve seçici 488 kez karşılaştırıldı, 274 ekran görüntüsü piksel piksel karşılaştırıldı. Harf dosyasında FideLite'ın `engine.js`'ine karşı perft: CPW 1–6. konumlar ve aynalanmış 4. konum 3. derinliğe kadar, ayrıca iki geçerken alma konumu. Hiçbir yerde fark yok. İki dosya ve Ders 6'daki üç üretilmiş belge Nu 26.10.12 ile temiz doğrulanıyor.
 - **Ekim 2026 FEN sırası.** `index.html` durumunu yeniden FEN sırasıyla yazıyor: tahta, boş kare harfini de adlandıran `(_='-').repeat(32)` ile kuruluyor; `e=_` ve `n=0`, `t` ile `c`'nin ardından kendi alanları olarak geliyor; sonuç kodu, sayısal dosyadaki gibi tekrar sayısının yanında başlıyor: `z=0,R=…`. `index.html` bilerek 1.897 bayttan 1.902'ye çıktı; `hexadecimal.html` değişmedi. Yalnızca durum satırı ve `z=0`'ın yeri değişti — bütün fonksiyonlar, işaretleme ve CSS aynı metin. İki sürüm yan yana yüklendi; kurdukları her global — tahta, sıra, rok hakları, geçerken alma karesi, sayaç, sonuç kodu, tekrar anahtarı ve sayısı, seçim — eşit çıktı, ilk çizilen ekran da.
+- **Ekim 2026 motor güncellemesi**, iki dosyada da, bir önceki sürüme karşı. `hexadecimal.html`, FideLite'ın yeni `engine.js`'ini izliyor; böylece `G`, `T`, `U`, `L`, `C` ve `M` yine, satır sonları dışında, onun karşılıklarıyla aynı: piyon dalı `&&(…)` ve `&!b[f]` yerine `?…:0` ve `>b[f]` ile kapanıyor, rok `T()+T(i+s)<S()` diye soruyor, kale atlaması `U`'nun dönüş değerinde duruyor: `d-8?d-1024?8:Q:U(r,Q)`. Tahta `.map()` yerine `for(j in s='…')` ile yerleştiriliyor, yine açık yazılı; materyal ağırlıkları `p%2?9:p/4&1` diye yazılıyor — aynı ağırlıklar, boş kareler için ayrı sınama olmadan; hüküm yasal bir hamle olup olmadığını `p+~t>>3?0:` ile soruyor. `index.html` aynı rok testini, piyon dalının `?…:0`'ını `&S()` ile ve ham hamlenin dönüş değerindeki `j(p)+d=='K2'?M(r,Q):` kale atlamasını aldı. Hiçbir kural ve hiçbir algoritma değişmedi; iki dosya da hâlâ 56 satır, parça parça aynı yükseklikte. `hexadecimal.html` 1.838 bayttan 1.817'ye, `index.html` 1.902'den 1.895'e indi. Her dosyanın iki sürümü Node'da aynı tıklamalarla, ikisinde de aynı ekran karesine tıklanarak, arada yanlış tıklamalarla sürüldü; her tıklamadan sonra tam durum, seçim, durum satırı, seçici ve her hücrenin taş karakteri ve stili, her yarım hamleden sonra da yasal hamle listeleri karşılaştırıldı: dosya başına 40 oyun ve 13.965 tıklama, 5.998 hamle listesi, 24 rok, 4 geçerken alma ve seçiciyle 48 terfi; bitişler `IM`, `SM` ve `W#`. Yeni sayısal dosyada perft: başlangıç konumunda 1–4. derinlikte 20 / 400 / 8.902 / 197.281. Hiçbir yerde fark yok. İşaretleme de, betiğin yazdığı işaretleme de değişmedi.
 
 ---
 
