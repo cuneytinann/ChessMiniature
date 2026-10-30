@@ -2,7 +2,7 @@
 
 # ChessMiniature
 
-A two-player chess arbiter in **1,895 bytes** of one HTML file, and its twin in **1,817 bytes**. No libraries, no build step, no server, no packer. Download a file, double-click, play.
+A two-player chess arbiter in **1,893 bytes** of one HTML file, and its twin in **1,815 bytes**. No libraries, no build step, no server, no packer. Download a file, double-click, play.
 
 Both files enforce the same rules. `index.html` stores the board as letters on sixty-four squares, the way a FEN does. `hexadecimal.html` stores it as numbers on a 0x88 board, the representation FideLite's engine uses. Put side by side, they are a small course in how few characters the rules of chess need, and in what a choice of representation costs.
 
@@ -231,9 +231,9 @@ Choosing an encoding that packs colour, capability and order into one small inte
 | `G` geometry | 270 | 245 | +25 |
 | `T` attack | 61 | 52 | +9 |
 | moves: `M` `L` `A` · `U` `L` `M` `A` | 519 | 516 | +3 |
-| `d` draw | 284 | 266 | +18 |
-| everything else | 637 | 622 | +15 |
-| **file** | **1,895** | **1,817** | **+78** |
+| `d` draw | 299 | 281 | +18 |
+| everything else | 620 | 605 | +15 |
+| **file** | **1,893** | **1,815** | **+78** |
 
 - **The starting position is longer as numbers:** both boards spell themselves, but the numeric one pays for an empty array and a `for…in` loop that turns its digits into numbers and spreads them over the 0x88 rows with `b[j*2-j%8]`.
 - **The aliases go away on 0x88.** The letter board needs `a` (`Math.abs`) for its distances, `U` (`'a'`) for the case boundary and `j` (`toUpperCase`); the numeric board keeps only `N`. A signed difference carries its own direction, and the colour is a bit.
@@ -271,7 +271,7 @@ Every byte of both files, by part, in the order they appear.
 
 | part | `index.html` | `hexadecimal.html` | |
 | --- | --- | --- | --- |
-| markup and CSS | 277 | 277 | board, status line, picker, colours, layout |
+| markup and CSS | 260 | 260 | board, status line, picker, colours, layout |
 | `<script>` tags | 17 | 17 | |
 | aliases | 49 | 13 | `N` `a` `U` `j` · `N` |
 | state | 75 | 103 | the FEN fields, in FEN's order |
@@ -283,14 +283,14 @@ Every byte of both files, by part, in the order they appear.
 | `M` | — | 114 | the real move: clock, castling rights, `U`, side to move, en passant square, key |
 | `z`, `R` | 19 | 19 | result code, repetition count; the table is `G` |
 | setup | 158 | 154 | promotion buttons and the 64 cells, generated |
-| `d` | 284 | 266 | draw the board and the status line |
+| `d` | 299 | 281 | draw the board and the status line |
 | `A` | 317 | 210 | apply the move, then the verdict; in `index.html` also the real move: castling rights, clock, `M`, side to move, en passant square, key |
 | `S` | 95 | 83 | the click handler |
 | `d()` | 3 | 3 | first draw |
 | commas, semicolons, line breaks | 41 | 41 | the layout is worth its weight |
-| **total** | **1,895** | **1,817** | |
+| **total** | **1,893** | **1,815** | |
 
-Split another way: the rules — state, `z`/`R`, `G`, `T`, the raw move, `L`, `C`, `M`, `A` — take **971** and **963** bytes; the page that shows them — markup, CSS, script tags, setup, `d`, `S` and the first draw — takes **834** and **800**. The rest is aliases and separators. The rulebook and the board that displays it cost about the same.
+Split another way: the rules — state, `z`/`R`, `G`, `T`, the raw move, `L`, `C`, `M`, `A` — take **971** and **963** bytes; the page that shows them — markup, CSS, script tags, setup, `d`, `S` and the first draw — takes **832** and **798**. The rest is aliases and separators. The rulebook and the board that displays it cost about the same.
 
 ---
 
@@ -330,7 +330,7 @@ MIT
 
 # ChessMiniature (Türkçe)
 
-Tek bir HTML dosyasında **1.895 bayt** içinde yazılmış iki kişilik bir satranç hakemi ve onun **1.817 baytlık** ikizi. Kütüphane yok, derleme adımı yok, sunucu yok, paketleyici yok. Bir dosyayı indirin, çift tıklayın, oynayın.
+Tek bir HTML dosyasında **1.893 bayt** içinde yazılmış iki kişilik bir satranç hakemi ve onun **1.815 baytlık** ikizi. Kütüphane yok, derleme adımı yok, sunucu yok, paketleyici yok. Bir dosyayı indirin, çift tıklayın, oynayın.
 
 İki dosya da aynı kuralları uygular. `index.html` tahtayı bir FEN gibi altmış dört karede harflerle tutar; `hexadecimal.html` sayılarla, FideLite motorunun kullandığı 0x88 tahtasında. Yan yana okunduklarında, satranç kurallarının ne kadar az karakterle yazılabileceğine ve bir veri gösterimi seçiminin neye mal olduğuna dair küçük bir derstirler.
 
@@ -559,9 +559,9 @@ Rengi, yeteneği ve sırayı tek bir küçük tam sayıya yükleyen bir kodlama 
 | `G` geometri | 270 | 245 | +25 |
 | `T` saldırı | 61 | 52 | +9 |
 | hamleler: `M` `L` `A` · `U` `L` `M` `A` | 519 | 516 | +3 |
-| `d` çizim | 284 | 266 | +18 |
-| geri kalan her şey | 637 | 622 | +15 |
-| **dosya** | **1.895** | **1.817** | **+78** |
+| `d` çizim | 299 | 281 | +18 |
+| geri kalan her şey | 620 | 605 | +15 |
+| **dosya** | **1.893** | **1.815** | **+78** |
 
 - **Başlangıç konumu sayılarla daha uzundur:** iki tahta da kendini heceler, ama sayısal olan boş bir diziye ve rakamlarını sayıya çevirip `b[j*2-j%8]` ile 0x88 satırlarına yayan bir `for…in` döngüsüne öder.
 - **0x88'de takma adlar gider.** Harf tahtası uzaklıkları için `a`'ya (`Math.abs`), büyük-küçük harf sınırı için `U`'ya (`'a'`) ve `j`'ye (`toUpperCase`) ihtiyaç duyar; sayısal tahtada yalnızca `N` kalır. İşaretli bir fark yönünü kendisi taşır, renk de bir bittir.
@@ -599,7 +599,7 @@ Taş karakterleri Unicode `U+265A`–`U+265F` aralığındadır ve Beyaz için C
 
 | parça | `index.html` | `hexadecimal.html` | |
 | --- | --- | --- | --- |
-| işaretleme ve CSS | 277 | 277 | tahta, durum satırı, seçici, renkler, yerleşim |
+| işaretleme ve CSS | 260 | 260 | tahta, durum satırı, seçici, renkler, yerleşim |
 | `<script>` etiketleri | 17 | 17 | |
 | takma adlar | 49 | 13 | `N` `a` `U` `j` · `N` |
 | durum | 75 | 103 | FEN alanları, FEN sırasıyla |
@@ -611,14 +611,14 @@ Taş karakterleri Unicode `U+265A`–`U+265F` aralığındadır ve Beyaz için C
 | `M` | — | 114 | gerçek hamle: sayaç, rok hakları, `U`, sıra, geçerken alma karesi, anahtar |
 | `z`, `R` | 19 | 19 | sonuç kodu, tekrar sayısı; tablo `G`'dir |
 | kurulum | 158 | 154 | terfi düğmeleri ve 64 hücre, üretilmiş |
-| `d` | 284 | 266 | tahtayı ve durum satırını çiz |
+| `d` | 299 | 281 | tahtayı ve durum satırını çiz |
 | `A` | 317 | 210 | hamleyi uygula, sonra hükmü ver; `index.html`'de gerçek hamle de burada: rok hakları, sayaç, `M`, sıra, geçerken alma karesi, anahtar |
 | `S` | 95 | 83 | tıklama işleyicisi |
 | `d()` | 3 | 3 | ilk çizim |
 | virgüller, noktalı virgüller, satır sonları | 41 | 41 | bu yerleşim maliyetine değer |
-| **toplam** | **1.895** | **1.817** | |
+| **toplam** | **1.893** | **1.815** | |
 
-Başka bir açıdan bölünce: kurallar — durum, `z`/`R`, `G`, `T`, ham hamle, `L`, `C`, `M`, `A` — **971** ve **963** bayt tutar; onları gösteren sayfa — işaretleme, CSS, betik etiketleri, kurulum, `d`, `S` ve ilk çizim — **834** ve **800**. Geri kalanı takma adlar ve ayraçlardır. Kural kitabı ile onu gösteren tahta aşağı yukarı aynı tutar.
+Başka bir açıdan bölünce: kurallar — durum, `z`/`R`, `G`, `T`, ham hamle, `L`, `C`, `M`, `A` — **971** ve **963** bayt tutar; onları gösteren sayfa — işaretleme, CSS, betik etiketleri, kurulum, `d`, `S` ve ilk çizim — **832** ve **798**. Geri kalanı takma adlar ve ayraçlardır. Kural kitabı ile onu gösteren tahta aşağı yukarı aynı tutar.
 
 ---
 
